@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenVendorAI – AI-Powered Vendor Intelligence & Risk Assessment</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eff6ff', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <div class="flex flex-1 h-screen overflow-hidden">
+        
+        <!-- SIDEBAR NAVIGATION -->
+        <aside class="w-64 bg-slate-900/90 border-r border-slate-800/80 flex flex-col justify-between p-4 z-20 backdrop-blur-md">
+            <div>
+                <!-- Brand Logo -->
+                <div class="flex items-center gap-3 px-2 py-3 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30 text-white font-black text-xl">
+                        🤖
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-base tracking-tight text-white leading-none">GenVendor<span class="text-blue-400">AI</span></h1>
+                        <p class="text-[10px] text-slate-400 mt-1 font-medium">Enterprise Vendor MDM</p>
+                    </div>
+                </div>
+
+                <!-- Nav Menu -->
+                <nav class="space-y-1">
+                    <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition border border-transparent" data-view="processing">
+                        <span>⚡</span>
+                        <span>Vendor Processing</span>
+                    </button>
+                    <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition border border-transparent" data-view="dashboard">
+                        <span>📊</span>
+                        <span>Analytics Dashboard</span>
+                    </button>
+                    <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition border border-transparent" data-view="search">
+                        <span>🔎</span>
+                        <span>Semantic Vector Search</span>
+                    </button>
+                    <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition border border-transparent" data-view="database">
+                        <span>📋</span>
+                        <span>Master Database</span>
+                    </button>
+                    <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition border border-transparent" data-view="risk">
+                        <span>⚠️</span>
+                        <span>Risk & Compliance</span>
+                    </button>
+                    <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition border border-transparent" data-view="audit">
+                        <span>📝</span>
+                        <span>Audit Trail</span>
+                    </button>
+                    <button class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold transition border border-transparent" data-view="reports">
+                        <span>📑</span>
+                        <span>Compliance Reports</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="pt-4 border-t border-slate-800/80 space-y-3">
+                <div class="px-2 py-2 rounded-lg bg-slate-800/40 border border-slate-700/50">
+                    <div class="flex items-center justify-between text-[11px] mb-1">
+                        <span class="text-slate-400">Vector Engine:</span>
+                        <span class="text-emerald-400 font-mono font-bold">FAISS FlatIP</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-slate-400">SBERT Model:</span>
+                        <span class="text-blue-400 font-mono font-bold">MiniLM-L6-v2</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between px-2">
+                    <a href="/docs" target="_blank" class="text-xs text-slate-400 hover:text-blue-400 flex items-center gap-1 font-medium transition">
+                        <span>📖 Swagger API</span>
+                    </a>
+                    <span class="text-[10px] text-slate-500">v2.0 Full-Stack</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-950">
+            
+            <!-- TOPBAR -->
+            <header class="h-16 border-b border-slate-800/80 px-8 flex items-center justify-between bg-slate-900/40 backdrop-blur-md z-10">
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-950/80 text-emerald-400 border border-emerald-800/50">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        FastAPI Engine Live
+                    </span>
+                    <span class="text-xs text-slate-500">•</span>
+                    <span class="text-xs text-slate-400 font-medium">Port 8000 (REST API)</span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button id="btn-seed-data" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 shadow-sm">
+                        <span>🌱</span>
+                        <span>Reset / Seed Demo Data</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- SCROLLABLE PAGE CONTAINER -->
+            <div class="flex-1 overflow-y-auto p-8 space-y-6">
+
+                <!-- ============================================================ -->
+                <!-- VIEW 1: VENDOR PROCESSING (7-STEP PIPELINE) -->
+                <!-- ============================================================ -->
+                <section id="view-processing" class="view-section space-y-6">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-black text-white tracking-tight">AI-Powered Vendor Onboarding Pipeline</h2>
+                            <p class="text-sm text-slate-400 mt-1">Upload vendor registration PDFs, tax certificates, or bank verification forms to trigger autonomous extraction & risk assessment.</p>
+                        </div>
+                    </div>
+
+                    <!-- Upload & Sample Selection Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <!-- Drag & Drop Upload Card -->
+                        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between">
+                            <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2 mb-3">
+                                <span>📤</span> Upload Vendor PDF Document
+                            </h3>
+                            <div id="dropzone" class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center bg-slate-900/30">
+                                <div class="w-12 h-12 rounded-full bg-blue-600/10 text-blue-400 flex items-center justify-center text-2xl mb-2">📄</div>
+                                <p class="text-xs font-semibold text-slate-200">Click to upload or drag & drop</p>
+                                <p class="text-[11px] text-slate-400 mt-1">PDF format (Digital or Scanned with OCR fallback)</p>
+                                <input type="file" id="pdf-file-input" accept=".pdf" class="hidden">
+                                <p id="selected-file-label" class="text-xs font-mono text-emerald-400 mt-2 hidden"></p>
+                            </div>
+                            <button id="btn-process-upload" class="mt-4 w-full py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/25 transition">
+                                🚀 Execute 7-Step Intelligence Pipeline
+                            </button>
+                        </div>
+
+                        <!-- Sample Document Selector Card -->
+                        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2 mb-2">
+                                    <span>📁</span> Choose Pre-loaded Test Document
+                                </h3>
+                                <p class="text-xs text-slate-400 mb-4">Evaluate the pipeline against realistic enterprise test documents spanning IT, Construction, Logistics, High-Similarity, and Malformed test cases.</p>
+                                
+                                <select id="sample-select" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl p-3 focus:border-blue-500 focus:outline-none mb-4">
+                                    <option value="">Loading test files...</option>
+                                </select>
+                            </div>
+                            <button id="btn-process-sample" class="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition">
+                                ⚡ Run Pipeline on Selected Sample
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Processing Status Indicator -->
+                    <div id="pipeline-status" class="glass-card p-6 rounded-2xl hidden space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span id="current-step-label" class="text-xs font-bold text-blue-400 flex items-center gap-2">
+                                <span class="animate-spin inline-block">⚙️</span> Processing...
+                            </span>
+                            <span class="text-xs font-mono text-slate-400">Autonomous Execution</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div id="pipeline-progress-bar" class="bg-gradient-to-r from-blue-500 to-indigo-500 h-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+
+                    <!-- PIPELINE RESULTS SECTION -->
+                    <div id="pipeline-results" class="space-y-6 hidden">
+                        
+                        <!-- Final Decision Top Banner -->
+                        <div id="decision-banner" class="p-6 rounded-2xl border">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div>
+                                    <span id="decision-badge" class="px-3 py-1 rounded-full text-xs font-bold">DECISION</span>
+                                    <h3 id="decision-title" class="text-xl font-extrabold text-white mt-2"></h3>
+                                    <p id="decision-desc" class="text-xs text-slate-300 mt-1 max-w-2xl"></p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button id="btn-download-result-pdf" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md flex items-center gap-1.5 transition">
+                                        <span>📥</span> Download PDF Assessment Report
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2-Column Details Grid -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            
+                            <!-- Left 2 Cols: Extracted Attributes & Validation -->
+                            <div class="lg:col-span-2 space-y-6">
+                                
+                                <!-- Extracted Vendor Profile Card -->
+                                <div class="glass-card p-6 rounded-2xl">
+                                    <h4 class="text-sm font-bold text-slate-200 mb-4 flex items-center gap-2">
+                                        <span>📋</span> Step 2: Extracted Vendor Master Fields
+                                    </h4>
+                                    <div class="grid grid-cols-2 gap-4 text-xs">
+                                        <div><span class="text-slate-400">Vendor Name:</span> <p id="res-name" class="font-bold text-slate-100 text-sm mt-0.5">-</p></div>
+                                        <div><span class="text-slate-400">Category:</span> <p id="res-category" class="font-semibold text-indigo-400 mt-0.5">-</p></div>
+                                        <div><span class="text-slate-400">GSTIN:</span> <p id="res-gstin" class="font-mono font-bold text-slate-200 mt-0.5">-</p></div>
+                                        <div><span class="text-slate-400">PAN:</span> <p id="res-pan" class="font-mono font-bold text-slate-200 mt-0.5">-</p></div>
+                                        <div class="col-span-2"><span class="text-slate-400">Registered Address:</span> <p id="res-address" class="text-slate-300 mt-0.5">-</p></div>
+                                        <div><span class="text-slate-400">Contact Person:</span> <p id="res-contact" class="text-slate-200 mt-0.5">-</p></div>
+                                        <div><span class="text-slate-400">Phone & Email:</span> <p id="res-phone" class="text-slate-200 mt-0.5">-</p><p id="res-email" class="text-slate-400 text-[11px]">-</p></div>
+                                        <div class="col-span-2"><span class="text-slate-400">Banking Information:</span> <p id="res-bank" class="font-mono text-slate-300 mt-0.5">-</p></div>
+                                    </div>
+                                </div>
+
+                                <!-- Field Validation Grid -->
+                                <div class="glass-card p-6 rounded-2xl">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                                            <span>✅</span> Step 3: Statutory Validation
+                                        </h4>
+                                        <span class="text-xs font-bold text-slate-300">Validation Score: <span id="res-val-score" class="text-emerald-400">0%</span></span>
+                                    </div>
+                                    <div id="res-val-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+                                </div>
+
+                                <!-- Deduplication Status -->
+                                <div class="glass-card p-6 rounded-2xl space-y-4">
+                                    <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                                        <span>🔍</span> Step 4 & 5: Exact Duplicate & Semantic Similarity
+                                    </h4>
+                                    <div id="res-dup-card"></div>
+                                    <div>
+                                        <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Nearest Semantic Peer Records (FAISS)</h5>
+                                        <div id="res-peers-container" class="space-y-2"></div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Right Col: Risk Score & Explainable Factor Breakdown -->
+                            <div class="space-y-6">
+                                
+                                <!-- Risk Score Gauge Card -->
+                                <div class="glass-card p-6 rounded-2xl text-center">
+                                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Step 6: AI Risk Evaluation</h4>
+                                    <div id="res-risk-score" class="text-4xl font-black text-white my-3">0 / 100</div>
+                                    <div id="res-risk-level" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-300 uppercase">UNKNOWN</div>
+                                </div>
+
+                                <!-- Positive Findings -->
+                                <div class="glass-card p-6 rounded-2xl">
+                                    <h5 class="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3">Verified Strengths</h5>
+                                    <ul id="res-pos-findings" class="space-y-2"></ul>
+                                </div>
+
+                                <!-- Flagged Risk Factors -->
+                                <div class="glass-card p-6 rounded-2xl">
+                                    <h5 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3">Flagged Risk Exceptions</h5>
+                                    <ul id="res-risk-factors" class="space-y-2"></ul>
+                                </div>
+
+                                <!-- OCR Raw Buffer Card -->
+                                <div class="glass-card p-6 rounded-2xl">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Step 1: Text Layer Buffer</h5>
+                                        <span id="res-ocr-method" class="text-[10px] font-mono text-blue-400">Direct</span>
+                                    </div>
+                                    <p id="res-ocr-chars" class="text-[11px] text-slate-500 mb-2"></p>
+                                    <pre id="res-ocr-text" class="text-[11px] text-slate-400 bg-slate-900/80 p-3 rounded-xl max-h-40 overflow-y-auto whitespace-pre-wrap"></pre>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ============================================================ -->
+                <!-- VIEW 2: EXECUTIVE DASHBOARD -->
+                <!-- ============================================================ -->
+                <section id="view-dashboard" class="view-section space-y-6 hidden">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-black text-white tracking-tight">Executive Analytics & Compliance Dashboard</h2>
+                            <p class="text-sm text-slate-400 mt-1">Real-time monitoring of master vendor entities, regulatory compliance distribution, and active risk tiers.</p>
+                        </div>
+                        <button onclick="window.open(API.getExecutiveSummaryPdfUrl(), '_blank')" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 self-start md:self-auto">
+                            <span>📊</span> Download Executive Summary PDF
+                        </button>
+                    </div>
+
+                    <!-- Top 5 KPI Cards -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div class="glass-card p-5 rounded-2xl">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Master Records</span>
+                            <p id="kpi-total" class="text-2xl font-black text-white mt-1">0</p>
+                            <span class="text-[11px] text-blue-400 font-medium">Active MDM Hub</span>
+                        </div>
+                        <div class="glass-card p-5 rounded-2xl">
+                            <span class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Approved Vendors</span>
+                            <p id="kpi-approved" class="text-2xl font-black text-emerald-400 mt-1">0</p>
+                            <span id="kpi-approved-rate" class="text-[11px] text-slate-400 font-medium">0% rate</span>
+                        </div>
+                        <div class="glass-card p-5 rounded-2xl">
+                            <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Under Review</span>
+                            <p id="kpi-review" class="text-2xl font-black text-amber-400 mt-1">0</p>
+                            <span id="kpi-review-rate" class="text-[11px] text-slate-400 font-medium">0% backlog</span>
+                        </div>
+                        <div class="glass-card p-5 rounded-2xl">
+                            <span class="text-[11px] font-bold text-rose-400 uppercase tracking-wider">Rejected Entries</span>
+                            <p id="kpi-rejected" class="text-2xl font-black text-rose-400 mt-1">0</p>
+                            <span id="kpi-rejected-rate" class="text-[11px] text-slate-400 font-medium">0% risk blocked</span>
+                        </div>
+                        <div class="glass-card p-5 rounded-2xl">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Valid Format Rate</span>
+                            <p id="kpi-valid" class="text-2xl font-black text-white mt-1">0</p>
+                            <span id="kpi-valid-rate" class="text-[11px] text-slate-400 font-medium">0% verified</span>
+                        </div>
+                    </div>
+
+                    <!-- Row of 4 Charts -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Chart 1: Category Distribution -->
+                        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between h-80">
+                            <h4 class="text-sm font-bold text-slate-200">Procurement Category Breakdown</h4>
+                            <div class="flex-1 relative mt-2"><canvas id="chart-category"></canvas></div>
+                        </div>
+
+                        <!-- Chart 2: Risk Tier Donut -->
+                        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between h-80">
+                            <h4 class="text-sm font-bold text-slate-200">Risk Tier Classification</h4>
+                            <div class="flex-1 relative mt-2"><canvas id="chart-risk"></canvas></div>
+                        </div>
+
+                        <!-- Chart 3: Recommendation Donut -->
+                        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between h-80">
+                            <h4 class="text-sm font-bold text-slate-200">Onboarding Decisions Distribution</h4>
+                            <div class="flex-1 relative mt-2"><canvas id="chart-rec"></canvas></div>
+                        </div>
+
+                        <!-- Chart 4: Average Risk by Domain -->
+                        <div class="glass-card p-6 rounded-2xl flex flex-col justify-between h-80">
+                            <h4 class="text-sm font-bold text-slate-200">Average Risk Score by Industry</h4>
+                            <div class="flex-1 relative mt-2"><canvas id="chart-risk-cat"></canvas></div>
+                        </div>
+                    </div>
+
+                    <!-- Active Compliance Watchlist Table -->
+                    <div class="glass-card p-6 rounded-2xl space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                                    <span>🚨</span> Active Compliance & Risk Watchlist
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-0.5">High-risk, rejected, or duplicate entities requiring compliance intervention.</p>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                        <th class="py-2.5 px-4">ID</th>
+                                        <th class="py-2.5 px-4">Vendor Entity</th>
+                                        <th class="py-2.5 px-4">Category</th>
+                                        <th class="py-2.5 px-4">GSTIN</th>
+                                        <th class="py-2.5 px-4">Risk Evaluation</th>
+                                        <th class="py-2.5 px-4">Decision</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="watchlist-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ============================================================ -->
+                <!-- VIEW 3: SEMANTIC VECTOR SEARCH -->
+                <!-- ============================================================ -->
+                <section id="view-search" class="view-section space-y-6 hidden">
+                    <div>
+                        <h2 class="text-2xl font-black text-white tracking-tight">Natural Language Semantic Vendor Search</h2>
+                        <p class="text-sm text-slate-400 mt-1">Search through vendor capabilities, descriptions, and locations using dense vector embeddings (SBERT + FAISS).</p>
+                    </div>
+
+                    <!-- Search Input Box -->
+                    <div class="glass-card p-6 rounded-2xl space-y-4">
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1 relative">
+                                <input type="text" id="search-query-input" placeholder="e.g. 'IT cloud software vendors in Pune', 'construction contractors with valid GST'..." class="w-full bg-slate-900 border border-slate-700 text-slate-100 text-sm rounded-xl p-3.5 pl-4 focus:border-blue-500 focus:outline-none">
+                            </div>
+                            <select id="search-cat-select" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-4 py-3 focus:border-blue-500 focus:outline-none">
+                                <option value="All">All Categories</option>
+                                <option value="Information Technology">Information Technology</option>
+                                <option value="Construction & Infrastructure">Construction & Infrastructure</option>
+                                <option value="Manufacturing & Industrial">Manufacturing & Industrial</option>
+                                <option value="Logistics & Supply Chain">Logistics & Supply Chain</option>
+                                <option value="Healthcare & Pharmaceuticals">Healthcare & Pharmaceuticals</option>
+                                <option value="Consulting & Professional Services">Consulting & Professional Services</option>
+                            </select>
+                            <button id="btn-search-exec" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
+                                <span>🔎</span> Search
+                            </button>
+                        </div>
+
+                        <!-- Threshold Slider -->
+                        <div class="flex items-center gap-4 pt-2 border-t border-slate-800">
+                            <span class="text-xs text-slate-400">Min Cosine Similarity:</span>
+                            <input type="range" id="search-sim-slider" min="10" max="90" value="20" class="w-48 accent-blue-500 cursor-pointer">
+                            <span id="search-sim-val" class="text-xs font-mono font-bold text-blue-400">20%</span>
+                            <span id="search-count-badge" class="ml-auto text-xs text-slate-500"></span>
+                        </div>
+                    </div>
+
+                    <!-- Search Results Grid -->
+                    <div id="search-results-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="col-span-2 text-center py-12 text-slate-500 text-sm">
+                            Enter a natural language search query above to query the FAISS knowledge store.
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ============================================================ -->
+                <!-- VIEW 4: MASTER VENDOR DATABASE -->
+                <!-- ============================================================ -->
+                <section id="view-database" class="view-section space-y-6 hidden">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-black text-white tracking-tight">Master Vendor Database</h2>
+                            <p class="text-sm text-slate-400 mt-1">Centralized registry of verified supplier records, tax identifiers, and risk status.</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <a href="/api/vendors/export/csv" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 shadow-sm">
+                                <span>📥</span> Export Master CSV
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="glass-card p-4 rounded-2xl flex flex-wrap items-center gap-3">
+                        <input type="text" id="db-search-input" placeholder="Search by name, GSTIN, PAN..." class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2 flex-1 min-w-[200px] focus:outline-none focus:border-blue-500" oninput="loadDatabase()">
+                        
+                        <select id="db-cat-filter" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none" onchange="loadDatabase()">
+                            <option value="All">All Categories</option>
+                            <option value="Information Technology">IT & Software</option>
+                            <option value="Construction & Infrastructure">Construction</option>
+                            <option value="Manufacturing & Industrial">Manufacturing</option>
+                            <option value="Logistics & Supply Chain">Logistics</option>
+                            <option value="Healthcare & Pharmaceuticals">Healthcare</option>
+                            <option value="Consulting & Professional Services">Consulting</option>
+                        </select>
+
+                        <select id="db-risk-filter" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none" onchange="loadDatabase()">
+                            <option value="All">All Risk Levels</option>
+                            <option value="LOW">Low Risk</option>
+                            <option value="MEDIUM">Medium Risk</option>
+                            <option value="HIGH">High Risk</option>
+                        </select>
+
+                        <select id="db-rec-filter" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none" onchange="loadDatabase()">
+                            <option value="All">All Decisions</option>
+                            <option value="APPROVE">Approved</option>
+                            <option value="REVIEW">Review</option>
+                            <option value="REJECT">Rejected</option>
+                        </select>
+
+                        <span id="db-total-count" class="text-xs text-slate-400 ml-auto font-medium"></span>
+                    </div>
+
+                    <!-- Master Table -->
+                    <div class="glass-card rounded-2xl overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-900/60 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                    <tr>
+                                        <th class="py-3 px-4">ID</th>
+                                        <th class="py-3 px-4">Vendor Entity</th>
+                                        <th class="py-3 px-4">Category</th>
+                                        <th class="py-3 px-4">GSTIN</th>
+                                        <th class="py-3 px-4">Risk Evaluation</th>
+                                        <th class="py-3 px-4">Decision</th>
+                                        <th class="py-3 px-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="db-table-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ============================================================ -->
+                <!-- VIEW 5: RISK & COMPLIANCE -->
+                <!-- ============================================================ -->
+                <section id="view-risk" class="view-section space-y-6 hidden">
+                    <div>
+                        <h2 class="text-2xl font-black text-white tracking-tight">Risk & Compliance Intelligence Hub</h2>
+                        <p class="text-sm text-slate-400 mt-1">Transparent AI scoring parameters, regulatory rules, and GST/PAN consistency models.</p>
+                    </div>
+
+                    <!-- Scoring Rubric -->
+                    <div class="glass-card p-6 rounded-2xl space-y-4">
+                        <h3 class="text-sm font-bold text-slate-200">📐 Explainable Multi-Factor Scoring Rubric</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-slate-400">
+                                        <th class="py-2.5 px-3">Regulatory Parameter</th>
+                                        <th class="py-2.5 px-3">Risk Penalty</th>
+                                        <th class="py-2.5 px-3">Compliance Rationale</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                                    <tr><td class="py-2.5 px-3 font-semibold text-rose-400">Invalid / Missing GSTIN</td><td class="py-2.5 px-3 font-mono font-bold text-rose-400">+25 pts</td><td class="py-2.5 px-3">Statutory input tax credit claim requirement under Indian GST laws.</td></tr>
+                                    <tr><td class="py-2.5 px-3 font-semibold text-rose-400">Invalid / Missing PAN</td><td class="py-2.5 px-3 font-mono font-bold text-rose-400">+20 pts</td><td class="py-2.5 px-3">Required for corporate TDS deduction and legal entity recognition.</td></tr>
+                                    <tr><td class="py-2.5 px-3 font-semibold text-rose-400">GSTIN vs PAN Mismatch</td><td class="py-2.5 px-3 font-mono font-bold text-rose-400">+25 pts</td><td class="py-2.5 px-3">Flags potential shell entities or borrowed GST registrations.</td></tr>
+                                    <tr><td class="py-2.5 px-3 font-semibold text-rose-400">Missing Banking / IFSC</td><td class="py-2.5 px-3 font-mono font-bold text-rose-400">+25 pts</td><td class="py-2.5 px-3">Prevents payment transaction failures and untraceable disbursement risks.</td></tr>
+                                    <tr><td class="py-2.5 px-3 font-semibold text-rose-400">Exact Master Duplicate</td><td class="py-2.5 px-3 font-mono font-bold text-rose-400">+40 pts</td><td class="py-2.5 px-3">Blocks creation of duplicate supplier records in ERP systems.</td></tr>
+                                    <tr><td class="py-2.5 px-3 font-semibold text-amber-400">High Semantic Similarity (≥85%)</td><td class="py-2.5 px-3 font-mono font-bold text-amber-400">+15 pts</td><td class="py-2.5 px-3">Flags potential sister concerns or unregistered shell spinoffs.</td></tr>
+                                    <tr><td class="py-2.5 px-3 font-semibold text-amber-400">Malformed Contact Data</td><td class="py-2.5 px-3 font-mono font-bold text-amber-400">+10 pts</td><td class="py-2.5 px-3">Ensures auditable contact channels with vendor representatives.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ============================================================ -->
+                <!-- VIEW 6: AUDIT TRAIL -->
+                <!-- ============================================================ -->
+                <section id="view-audit" class="view-section space-y-6 hidden">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-black text-white tracking-tight">Enterprise Audit Trail</h2>
+                            <p class="text-sm text-slate-400 mt-1">Immutable chronological event records of all document extractions, validations, and AI decisions.</p>
+                        </div>
+                        <select id="audit-event-filter" class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-4 py-2 focus:outline-none" onchange="loadAuditLogs()">
+                            <option value="All">All Event Types</option>
+                            <option value="DOCUMENT_UPLOADED">DOCUMENT_UPLOADED</option>
+                            <option value="VENDOR_EXTRACTED">VENDOR_EXTRACTED</option>
+                            <option value="VALIDATION_COMPLETED">VALIDATION_COMPLETED</option>
+                            <option value="DUPLICATE_CHECKED">DUPLICATE_CHECKED</option>
+                            <option value="RISK_ASSESSMENT_COMPLETED">RISK_ASSESSMENT_COMPLETED</option>
+                            <option value="VENDOR_CREATED">VENDOR_CREATED</option>
+                            <option value="VENDOR_DELETED">VENDOR_DELETED</option>
+                        </select>
+                    </div>
+
+                    <div class="glass-card rounded-2xl overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-900/60 border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                    <tr>
+                                        <th class="py-3 px-4">Timestamp</th>
+                                        <th class="py-3 px-4">Event Type</th>
+                                        <th class="py-3 px-4">Vendor Entity</th>
+                                        <th class="py-3 px-4">Actor</th>
+                                        <th class="py-3 px-4">Status</th>
+                                        <th class="py-3 px-4">Payload Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="audit-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ============================================================ -->
+                <!-- VIEW 7: COMPLIANCE REPORTS -->
+                <!-- ============================================================ -->
+                <section id="view-reports" class="view-section space-y-6 hidden">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-black text-white tracking-tight">Compliance Assessment Report Generator</h2>
+                            <p class="text-sm text-slate-400 mt-1">Preview and download printable statutory risk evaluation dossiers.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="btn-report-exec-pdf" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5">
+                                <span>📊</span> Download Full Executive Summary PDF
+                            </button>
+                            <button id="btn-report-dl-pdf" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md transition hidden">
+                                📥 Download Vendor PDF Dossier
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-4 rounded-2xl">
+                        <select id="report-vendor-select" class="w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl p-3 focus:outline-none focus:border-blue-500">
+                            <option value="">Loading vendors...</option>
+                        </select>
+                    </div>
+
+                    <iframe id="report-preview-frame" class="w-full h-[650px] rounded-2xl border border-slate-800 bg-white hidden"></iframe>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- VENDOR PROFILE MODAL -->
+    <div id="vendor-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="glass-card max-w-2xl w-full rounded-2xl p-6 border border-slate-700 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span id="modal-id-badge" class="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-blue-950 text-blue-400 border border-blue-800">#0</span>
+                    <h3 id="modal-title" class="text-base font-bold text-white">Vendor Details</h3>
+                </div>
+                <button onclick="closeVendorModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div><span class="text-slate-400">GSTIN:</span> <p id="modal-gstin" class="font-mono font-bold text-slate-200 mt-0.5">-</p></div>
+                <div><span class="text-slate-400">PAN:</span> <p id="modal-pan" class="font-mono font-bold text-slate-200 mt-0.5">-</p></div>
+                <div><span class="text-slate-400">Business Category:</span> <p id="modal-category" class="font-semibold text-indigo-400 mt-0.5">-</p></div>
+                <div><span class="text-slate-400">Contact Person:</span> <p id="modal-contact" class="text-slate-200 mt-0.5">-</p></div>
+                <div class="col-span-2"><span class="text-slate-400">Address:</span> <p id="modal-address" class="text-slate-300 mt-0.5">-</p></div>
+                <div><span class="text-slate-400">Phone:</span> <p id="modal-phone" class="text-slate-200 mt-0.5">-</p></div>
+                <div><span class="text-slate-400">Email:</span> <p id="modal-email" class="text-slate-200 mt-0.5">-</p></div>
+                <div class="col-span-2"><span class="text-slate-400">Banking Info:</span> <p id="modal-bank" class="font-mono text-slate-300 mt-0.5">-</p></div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-xs">
+                <span class="text-slate-400 font-bold uppercase text-[10px]">AI Assessment Summary</span>
+                <p id="modal-summary" class="text-slate-300 mt-1"></p>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+                <button id="modal-btn-pdf" class="px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition flex items-center gap-1.5">
+                    <span>📥</span> Download PDF Assessment
+                </button>
+                <button onclick="closeVendorModal()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frontend Scripts -->
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
