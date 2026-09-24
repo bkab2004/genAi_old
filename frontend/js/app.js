@@ -60,6 +60,7 @@ function navigateTo(viewName) {
     if (viewName === 'audit') loadAuditLogs();
     if (viewName === 'reports') loadReportsView();
     if (viewName === 'risk') loadRiskView();
+    if (viewName === 'chat') focusChatInput();
 }
 
 // ============================================================
@@ -807,6 +808,256 @@ function loadRiskView() {
 
 
 // ============================================================
+// AI COPILOT / CHATBOT CONTROLLER
+// ============================================================
+
+State.chatHistory = [];
+
+function focusChatInput() {
+    setTimeout(() => {
+        const input = document.getElementById('chat-input');
+        if (input) input.focus();
+    }, 100);
+}
+
+function parseMarkdownToHtml(md) {
+    if (!md) return '';
+    let html = md;
+
+    // Headers
+    html = html.replace(/^### (.*$)/gim, '<h4 class="font-bold text-slate-100 text-sm mt-2 mb-1">$1</h4>');
+    html = html.replace(/^#### (.*$)/gim, '<h5 class="font-bold text-blue-400 text-xs mt-1 mb-0.5">$1</h5>');
+
+    // Bold & Italics
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em class="text-slate-300">$1</em>');
+
+    // Code
+    html = html.replace(/`([^`]+)`/g, '<code class="px-1.5 py-0.5 rounded bg-slate-950 text-indigo-300 font-mono text-[11px] border border-slate-800">$1</code>');
+
+    // Blockquotes
+    html = html.replace(/^> (.*$)/gim, '<blockquote class="border-l-2 border-blue-500 pl-3 py-1 my-1.5 bg-blue-950/20 text-slate-300 italic text-[11px] rounded-r">$1</blockquote>');
+
+    // Tables (Basic markdown table converter)
+    const tableRegex = /\|(.+)\|\n\|[-|\s]+\|\n((?:\|.+\|\n?)+)/g;
+    html = html.replace(tableRegex, (match, headerRow, bodyRows) => {
+        const headers = headerRow.split('|').filter(c => c.trim()).map(c => `<th class="p-1.5 text-left text-[11px] font-bold text-slate-300 bg-slate-950/80 border border-slate-800">${c.trim()}</th>`).join('');
+        const rows = bodyRows.trim().split('\n').map(row => {
+            const cells = row.split('|').filter(c => c.trim()).map(c => `<td class="p-1.5 text-[11px] text-slate-300 border border-slate-800/80">${c.trim()}</td>`).join('');
+            return `<tr>${cells}</tr>`;
+        }).join('');
+        return `<div class="overflow-x-auto my-2"><table class="w-full border-collapse border border-slate-800 text-xs rounded-lg overflow-hidden"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    });
+
+    // Lists
+    html = html.replace(/^\s*[-•]\s+(.*$)/gim, '<div class="flex gap-2 items-start my-0.5"><span class="text-blue-400">•</span><span class="flex-1 text-slate-200">$1</span></div>');
+
+    // Newlines
+    html = html.replace(/\n\n/g, '<div class="h-2"></div>');
+
+    return html;
+}
+
+async function sendUserChatMessage(customMsg = null) {
+    const input = document.getElementById('chat-input');
+    const msg = customMsg || (input ? input.value.trim() : '');
+    if (!msg) return;
+
+    if (input && !customMsg) input.value = '';
+
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+
+    // Render User Message Bubble
+    const userDiv = document.createElement('div');
+    userDiv.className = 'flex gap-3 justify-end';
+    userDiv.innerHTML = `
+        <div class="glass-card p-3 rounded-2xl rounded-tr-none max-w-2xl text-xs bg-blue-600 text-white shadow-md">
+            <p>${msg}</p>
+        </div>
+        <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-sm shrink-0 border border-slate-700">👤</div>
+    `;
+    container.appendChild(userDiv);
+    container.scrollTop = container.scrollHeight;
+
+    // Render Typing Indicator Bubble
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'chat-typing-indicator';
+    typingDiv.className = 'flex gap-3';
+    typingDiv.innerHTML = `
+        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-sm shrink-0">🤖</div>
+        <div class="glass-card p-3 rounded-2xl rounded-tl-none text-xs border border-slate-700/60 bg-slate-900/80 flex items-center gap-1.5 text-slate-400">
+            <span class="w-2 h-2 rounded-full bg-blue-400 animate-bounce"></span>
+            <span class="w-2 h-2 rounded-full bg-blue-400 animate-bounce [animation-delay:0.2s]"></span>
+            <span class="w-2 h-2 rounded-full bg-blue-400 animate-bounce [animation-delay:0.4s]"></span>
+            <span class="text-[11px] ml-1">Analyzing master database & vector index...</span>
+        </div>
+    `;
+    container.appendChild(typingDiv);
+    container.scrollTop = container.scrollHeight;
+
+    // Call Backend API
+    try {
+        const res = await API.sendChatMessage(msg, State.chatHistory);
+        typingDiv.remove();
+
+        // Render AI Assistant Reply Bubble
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'flex gap-3';
+        const formattedHtml = parseMarkdownToHtml(res.reply);
+
+        let actionChipsHtml = '';
+        if (res.suggested_actions && res.suggested_actions.length > 0) {
+            actionChipsHtml = `
+                <div class="pt-2 border-t border-slate-800/80 flex flex-wrap gap-1.5 mt-2">
+                    ${res.suggested_actions.map(act => `
+                        <button class="px-2.5 py-1 rounded-lg text-[11px] bg-slate-800 hover:bg-blue-600/30 text-slate-300 border border-slate-700 hover:border-blue-500/50 transition" onclick="sendQuickPrompt('${act.replace(/'/g, "\\'")}')">
+                            ${act}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        aiDiv.innerHTML = `
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-sm shrink-0 shadow-md">🤖</div>
+            <div class="glass-card p-4 rounded-2xl rounded-tl-none max-w-3xl text-xs space-y-2 border border-slate-700/60 bg-slate-900/90 shadow-lg">
+                <div class="flex items-center justify-between pb-1 border-b border-slate-800/60">
+                    <span class="font-bold text-blue-400 text-xs">GenVendorAI Copilot</span>
+                    <span class="text-[10px] text-slate-500 font-mono">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                </div>
+                <div class="text-slate-200 leading-relaxed">${formattedHtml}</div>
+                ${actionChipsHtml}
+            </div>
+        `;
+        container.appendChild(aiDiv);
+        container.scrollTop = container.scrollHeight;
+
+        // Save in conversation turn history
+        State.chatHistory.push({ role: 'user', content: msg });
+        State.chatHistory.push({ role: 'assistant', content: res.reply });
+        if (State.chatHistory.length > 20) State.chatHistory = State.chatHistory.slice(-20);
+
+    } catch (err) {
+        typingDiv.remove();
+        showToast('Chatbot error: ' + err.message, 'error');
+    }
+}
+
+function sendQuickPrompt(promptText) {
+    if (State.currentView !== 'chat') {
+        navigateTo('chat');
+    }
+    sendUserChatMessage(promptText);
+}
+
+function clearChatHistory() {
+    State.chatHistory = [];
+    const container = document.getElementById('chat-messages');
+    if (container) {
+        container.innerHTML = `
+            <div class="flex gap-3">
+                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-sm shrink-0">🤖</div>
+                <div class="glass-card p-4 rounded-2xl rounded-tl-none max-w-3xl text-xs space-y-2 border border-slate-700/60 bg-slate-900/80">
+                    <p class="font-bold text-blue-400">GenVendorAI Copilot</p>
+                    <p class="text-slate-200">Chat history cleared. How can I assist you with your vendor intelligence queries today?</p>
+                </div>
+            </div>
+        `;
+    }
+    showToast('Chat history reset', 'info');
+}
+
+// Floating Chat Widget Controller
+function toggleFloatingChat() {
+    const drawer = document.getElementById('floating-chat-drawer');
+    if (!drawer) return;
+    const isHidden = drawer.classList.contains('hidden');
+    if (isHidden) {
+        drawer.classList.remove('hidden');
+        const input = document.getElementById('floating-chat-input');
+        if (input) input.focus();
+    } else {
+        drawer.classList.add('hidden');
+    }
+}
+
+async function sendFloatingChatMessage() {
+    const input = document.getElementById('floating-chat-input');
+    const msg = input ? input.value.trim() : '';
+    if (!msg) return;
+    input.value = '';
+
+    const container = document.getElementById('floating-chat-messages');
+    if (!container) return;
+
+    // Render User Message
+    const userDiv = document.createElement('div');
+    userDiv.className = 'p-2 rounded-xl bg-blue-600 text-white text-[11px] text-right ml-6';
+    userDiv.innerText = msg;
+    container.appendChild(userDiv);
+    container.scrollTop = container.scrollHeight;
+
+    // Render Typing
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-[10px] mr-6 animate-pulse';
+    typingDiv.innerText = 'GenVendorAI Copilot is searching database...';
+    container.appendChild(typingDiv);
+    container.scrollTop = container.scrollHeight;
+
+    try {
+        const res = await API.sendChatMessage(msg, State.chatHistory);
+        typingDiv.remove();
+
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 text-[11px] mr-6 space-y-1';
+        aiDiv.innerHTML = `<span class="font-bold text-blue-400 text-[10px] block">Copilot:</span>${parseMarkdownToHtml(res.reply)}`;
+        container.appendChild(aiDiv);
+        container.scrollTop = container.scrollHeight;
+
+        State.chatHistory.push({ role: 'user', content: msg });
+        State.chatHistory.push({ role: 'assistant', content: res.reply });
+    } catch (err) {
+        typingDiv.remove();
+        showToast(err.message, 'error');
+    }
+}
+
+function initChatEvents() {
+    const btnSend = document.getElementById('btn-send-chat');
+    const chatInput = document.getElementById('chat-input');
+    const btnClear = document.getElementById('btn-clear-chat');
+    const floatingInput = document.getElementById('floating-chat-input');
+
+    if (btnSend) {
+        btnSend.addEventListener('click', () => sendUserChatMessage());
+    }
+
+    if (chatInput) {
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendUserChatMessage();
+            }
+        });
+    }
+
+    if (btnClear) {
+        btnClear.addEventListener('click', clearChatHistory);
+    }
+
+    if (floatingInput) {
+        floatingInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendFloatingChatMessage();
+            }
+        });
+    }
+}
+
+
+// ============================================================
 // APP INITIALIZATION
 // ============================================================
 
@@ -837,6 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Init Component Handlers
     initProcessingView();
     initSearchView();
+    initChatEvents();
 
     // Default start view
     navigateTo('processing');

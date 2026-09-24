@@ -39,6 +39,7 @@ from ai.vector_store import (
 )
 from ai.semantic_search import semantic_search_vendors
 from ai.risk_engine import generate_vendor_risk_assessment
+from ai.chatbot import get_chatbot
 from dashboard.dashboard import show_dashboard
 from audit.audit_logger import log_event, get_all_audit_logs, get_audit_logs_df, clear_audit_logs
 from reports.report_generator import generate_vendor_pdf_report, generate_vendor_html_report
@@ -147,7 +148,8 @@ page = st.sidebar.radio(
         "📋 Vendor Database",
         "⚠️ Risk & Compliance",
         "📝 Audit Logs",
-        "📑 Reports"
+        "📑 Reports",
+        "💬 AI Copilot / Chat"
     ]
 )
 
@@ -915,6 +917,57 @@ elif page == "📑 Reports":
                     mime="text/html",
                     key="rep_page_html"
                 )
+
+
+# ============================================================
+# PAGE 8: AI COPILOT & VENDOR INTELLIGENCE CHATBOT
+# ============================================================
+elif page == "💬 AI Copilot / Chat":
+    st.title("💬 GenVendorAI Copilot – Conversational Vendor Intelligence")
+    st.markdown("Ask natural-language questions over the master vendor database, statutory compliance checks, FAISS vector embeddings, and risk evaluations.")
+
+    bot = get_chatbot()
+
+    # Initialize chat history in session state
+    if "st_chat_history" not in st.session_state:
+        st.session_state["st_chat_history"] = [
+            {"role": "assistant", "content": "👋 **Hello! I am your GenVendorAI Copilot.** How can I assist you with vendor master data, compliance status, or risk evaluations today?"}
+        ]
+
+    # Quick prompt buttons
+    st.markdown("##### 💡 Suggested Quick Queries:")
+    qc1, qc2, qc3, qc4 = st.columns(4)
+    quick_input = None
+    with qc1:
+        if st.button("📊 Database Overview", key="q1"): quick_input = "Give me an overview of all master vendors"
+    with qc2:
+        if st.button("⚠️ High-Risk Watchlist", key="q2"): quick_input = "Which vendors are on the high-risk watchlist?"
+    with qc3:
+        if st.button("🏢 Query Zenith Cloud", key="q3"): quick_input = "Tell me about Zenith Cloud Technologies"
+    with qc4:
+        if st.button("⚖️ How Risk is Calculated?", key="q4"): quick_input = "How is statutory compliance and risk calculated?"
+
+    # Display chat thread
+    st.markdown("---")
+    for chat_msg in st.session_state["st_chat_history"]:
+        with st.chat_message(chat_msg["role"], avatar="🤖" if chat_msg["role"] == "assistant" else "👤"):
+            st.markdown(chat_msg["content"])
+
+    # User Input
+    user_prompt = st.chat_input("Ask anything about vendors, GSTINs, bank details, risk scores, or search suppliers...") or quick_input
+
+    if user_prompt:
+        # Display user message
+        st.session_state["st_chat_history"].append({"role": "user", "content": user_prompt})
+        with st.chat_message("user", avatar="👤"):
+            st.markdown(user_prompt)
+
+        # Process with Chatbot RAG Engine
+        with st.chat_message("assistant", avatar="🤖"):
+            with st.spinner("Analyzing master database and vector index..."):
+                response = bot.process_message(user_prompt)
+                st.markdown(response["reply"])
+                st.session_state["st_chat_history"].append({"role": "assistant", "content": response["reply"]})
 
 
 # ============================================================

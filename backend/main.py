@@ -29,6 +29,7 @@ from backend.routes.search_routes import router as search_router
 from backend.routes.analytics_routes import router as analytics_router
 from backend.routes.report_routes import router as report_router
 from backend.routes.audit_routes import router as audit_router
+from backend.routes.chat_routes import router as chat_router
 
 
 @asynccontextmanager
@@ -67,6 +68,7 @@ app.include_router(search_router)
 app.include_router(analytics_router)
 app.include_router(report_router)
 app.include_router(audit_router)
+app.include_router(chat_router)
 
 # Mount Frontend Static Assets
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")

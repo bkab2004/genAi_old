@@ -107,6 +107,24 @@ const API = {
     async getReportHtml(vendorId) {
         const res = await fetch(`${API_BASE}/api/reports/${vendorId}/html`);
         return res.text();
+    },
+
+    async sendChatMessage(message, history = []) {
+        const res = await fetch(`${API_BASE}/api/chat/message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, history })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || 'Chat assistant failed to respond.');
+        }
+        return res.json();
+    },
+
+    async getChatSuggestions() {
+        const res = await fetch(`${API_BASE}/api/chat/suggestions`);
+        return res.json();
     }
 };
 
